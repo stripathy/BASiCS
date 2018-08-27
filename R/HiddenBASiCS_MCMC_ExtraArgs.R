@@ -52,7 +52,7 @@ HiddenBASiCS_MCMC_ExtraArgs <- function(Args, Data, Burn, n, Regression)
   {
     PriorParam <- list(s2.mu = 0.5, s2.delta = 0.5, a.delta = 1, 
                        b.delta = 1, p.phi = rep(1, times = n), 
-                       a.s = 1, b.s = 1, a.theta = 1, b.theta = 1)
+                       a.s = 2.5, b.s = 1.5, a.theta = 1, b.theta = 1)
     if(Regression == TRUE) {
       PriorParam$m <- rep(0, k); PriorParam$V <- diag(k) 
       PriorParam$a.sigma2 <- 2; PriorParam$b.sigma2 <- 2  

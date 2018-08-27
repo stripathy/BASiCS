@@ -94,7 +94,6 @@ arma::vec sUpdateBatch(
     arma::vec const& thetaBatch, 
     double const& as, 
     double const& bs, 
-    arma::mat const& BatchDesign,
     int const& n,
     arma::vec & s1);
 

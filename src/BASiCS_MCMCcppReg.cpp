@@ -237,7 +237,7 @@ Rcpp::List HiddenBASiCS_MCMCcppReg(
     
     // UPDATE OF S
     sAux = sUpdateBatch(sAux, nuAux.col(0), thetaBatch,
-                        as, bs, BatchDesign_arma, n, y_n); 
+                        as, bs, n, y_n); 
     
     // UPDATE OF DELTA: 
     // 1st COLUMN IS THE UPDATE, 

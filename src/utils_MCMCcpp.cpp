@@ -191,34 +191,22 @@ arma::vec sUpdateBatch(
     arma::vec const& thetaBatch, 
     double const& as, 
     double const& bs, 
-    arma::mat const& BatchDesign,
     int const& n,
     arma::vec & s1)
 {
   
-  // Calculating parameters to the passed as input to the Rgig function (common for all cells)
-  arma::vec p = as - 1 / thetaBatch; 
-  double b = 2 * bs;
-  
-  // GIG draws
-  // Initialize s1 with s0 (return that for invalid samples)
-  
-  // Calculating parameter to the passed as input to the Rgig function (specific to each cell)
-  arma::vec a = 2 * nu / thetaBatch;
+  // Calculating IG parameters 
+  arma::vec a = as + 1 / thetaBatch; 
+  arma::vec b = bs + nu / thetaBatch;
+
   for (int j = 0; j < n; j++) {
-    if(!R_IsNA(p(j))) {
-      if(!R_IsNA(a(j)) & (a(j)>0)) {
-        s1(j) = Rcpp::as<double>(Rgig(1, p(j), a(j), b));
+      s1(j) = pow(R::rgamma(a(j), 1.0 / b(j)), -1);
         /* DEBUG: break in case of undefined values */
-        if(R_IsNA(s1(j))) {
-          Rcpp::Rcout << "Error when updating s" << j << std::endl;
-          Rcpp::stop("Please consider additional filter of the input dataset.");
-        }
+      if(R_IsNA(s1(j))) {
+        s1(j) = s0(j); 
+        Rcpp::Rcout << "Error when updating s" << j << std::endl;
+        Rcpp::stop("Please consider additional filter of the input dataset.");
       }
-      else {
-        if(!(a(j)<0) & (p(j)>0)) s1(j) = Rcpp::as<double>(Rgig(1, p(j), a(j), b));
-      }
-    }
   }
   return s1;     
 }
