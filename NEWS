@@ -973,3 +973,6 @@ version 1.3.3: (2018-05-21)
 version 1.3.4: (2018-08-27)
 - For scaling parameters s[j]; Gamma(1,1) replaced by IGamma(2.5, 1.5)
 - Default hyper-param values updated accordingly
+
+version 1.3.5: (2018-08-28)
+- Collapsed sampler after integrating out s[j]'s has been implemented

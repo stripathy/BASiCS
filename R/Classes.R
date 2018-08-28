@@ -75,14 +75,14 @@ setClass("BASiCS_Chain",
             {
               ValidNames <- c("mu", "delta", "phi", "s", "nu", "theta",
                               "beta", "sigma2", "epsilon", "RefFreq")
-              ReqNames <- c("mu", "delta", "s", "nu", "theta")
+              ReqNames <- c("mu", "delta", "nu", "theta")
               
               # Check whether all elements of `parameters` are valid
               if(sum(!(names(object@parameters) %in% ValidNames) > 0) > 0)
                 errors <- c(errors, "Invalid elemens in `parameters` slot")
               
               # Check whether all minimum `parameters` are present
-              if(sum(names(object@parameters) %in% ReqNames) != 5)
+              if(sum(names(object@parameters) %in% ReqNames) != 4)
                 errors <- c(errors, "One or more parameters are missing")     
               
               # Check for infinite values and NAs
@@ -93,7 +93,7 @@ setClass("BASiCS_Chain",
               
               N <- nrow(object@parameters$mu)
               q <- ncol(object@parameters$mu)
-              n <- ncol(object@parameters$s)
+              n <- ncol(object@parameters$nu)
               
               # Check number of iterations per element of `parameters`
               if(sum(lapply(
@@ -105,9 +105,9 @@ setClass("BASiCS_Chain",
                 errors <- c(errors, 
                             "Parameters' dimensions are not compatible (genes)")
               # Check dimensions for basic cell-specific parameters
-              if(sum(lapply(object@parameters[c("s", "nu")], ncol) != n) > 0)
-                errors <- c(errors, 
-                            "Parameters' dimensions are not compatible (cells)")
+  #            if(sum(lapply(object@parameters[c("nu"), , drop = FALSE], ncol) != n) > 0)
+ #               errors <- c(errors, 
+ #                           "Parameters' dimensions are not compatible (cells)")
               # Check dimensions for optional gene-specific parameters
               if("epsilon" %in% names(object@parameters))
               {

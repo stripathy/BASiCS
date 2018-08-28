@@ -377,7 +377,7 @@ BASiCS_MCMC <- function(Data, N, Thin, Burn, Regression, ...)
     Chain$lambda <- NULL # Remove to reduce storage
   }
   CellLabels <- paste0(colnames(assay(Data)), "_Batch", colData(Data)$BatchInfo)
-  colnames(Chain$s) <- CellLabels
+  if("s" %in% names(Chain)) { colnames(Chain$s) <- CellLabels }
   if(WithSpikes == TRUE) colnames(Chain$phi) <- CellLabels 
   colnames(Chain$nu) <- CellLabels
   colnames(Chain$theta) <- paste0("Batch", unique(colData(Data)$BatchInfo))

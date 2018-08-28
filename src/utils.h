@@ -115,6 +115,25 @@ arma::mat nuUpdateBatch(
     arma::vec & u,
     arma::vec & ind);
 
+arma::mat nuUpdateBatch2(
+    arma::vec const& nu0, 
+    arma::vec const& prop_var, 
+    arma::mat const& Counts,
+    double const& SumSpikeInput,
+    arma::mat const& BatchDesign, 
+    arma::vec const& mu, 
+    arma::vec const& invdelta, 
+    arma::vec const& phi, 
+    arma::vec const& thetaBatch, 
+    arma::vec const& sum_bygene_all, 
+    double const& as,
+    double const& bs,
+    int const& q0,
+    int const& n,
+    arma::vec & nu1,
+    arma::vec & u,
+    arma::vec & ind);
+
 arma::mat thetaUpdateBatch(
     arma::vec const& theta0, 
     arma::vec const& prop_var, 
@@ -124,6 +143,19 @@ arma::mat thetaUpdateBatch(
     arma::vec const& nu, 
     double const& a_theta, 
     double const& b_theta, 
+    int const& n,
+    int const& nBatch);
+
+arma::mat thetaUpdateBatch2(
+    arma::vec const& theta0, 
+    arma::vec const& prop_var, 
+    arma::mat const& BatchDesign,
+    arma::vec const& BatchSizes,
+    arma::vec const& nu, 
+    double const& a_theta, 
+    double const& b_theta, 
+    double const& as,
+    double const& ab,
     int const& n,
     int const& nBatch);
   

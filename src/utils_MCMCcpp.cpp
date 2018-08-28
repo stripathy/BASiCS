@@ -267,19 +267,77 @@ arma::mat nuUpdateBatch(
   return join_rows(nu1, ind);
 }
 
+/* Metropolis-Hastings updates of nu (batch case)
+ * Updates are implemented simulateaneously for all cells.
+ */
+arma::mat nuUpdateBatch2(
+    arma::vec const& nu0, 
+    arma::vec const& prop_var, 
+    arma::mat const& Counts,
+    double const& SumSpikeInput,
+    arma::mat const& BatchDesign, 
+    arma::vec const& mu, 
+    arma::vec const& invdelta, 
+    arma::vec const& phi, 
+    arma::vec const& thetaBatch, 
+    arma::vec const& sum_bygene_all, 
+    double const& as,
+    double const& bs,
+    int const& q0,
+    int const& n,
+    arma::vec & nu1,
+    arma::vec & u,
+    arma::vec & ind)
+{
+  using arma::span;
+  
+  // PROPOSAL STEP    
+  nu1 = exp(arma::randn(n) % sqrt(prop_var) + log(nu0));
+  u = arma::randu(n);
+  
+  // ACCEPT/REJECT STEP
+  arma::vec log_aux = arma::zeros(n);
+  
+  for (int j=0; j < n; j++) {
+    for (int i=0; i < q0; i++) {
+      log_aux(j) -= ( Counts(i,j) + invdelta(i) ) *  
+        log( ( phi(j)*nu1(j)*mu(i) + invdelta(i) ) / 
+        ( phi(j)*nu0(j)*mu(i) + invdelta(i) ));
+    } 
+  }
+  
+  log_aux += (log(nu1) - log(nu0)) % (sum_bygene_all + 1/thetaBatch);
+  log_aux -= SumSpikeInput * (nu1 -nu0);
+  log_aux -= (as + 1/thetaBatch) % log((bs * thetaBatch + nu1) / (bs * thetaBatch + nu0)); 
+
+  /* CREATING OUTPUT VARIABLE & DEBUG 
+  * Proposed values are automatically rejected in the following cases:
+  * - If smaller than 1e-5
+  * - If the proposed value is not finite
+  * - When the acceptance rate cannot be numerally computed
+  */ 
+  ind = DegubInd(ind, n, u, log_aux, nu1, 1e-5, "nu");
+  for (int j=0; j < n; j++) {
+    if(ind(j) == 0) nu1(j) = nu0(j);  
+  }
+  
+  // OUTPUT
+  return join_rows(nu1, ind);
+}
+
 /* Metropolis-Hastings updates of theta 
 */
 arma::mat thetaUpdateBatch(
     arma::vec const& theta0, /* Current value of $\theta$ */
-arma::vec const& prop_var, /* Current value of the proposal variances for $\theta$ */
-arma::mat const& BatchDesign,
-arma::vec const& BatchSizes,
-arma::vec const& s, /* Current value of $s=(s_1,...,s_n)$' */
-arma::vec const& nu, /* Current value of $\nu=(\nu_1,...,\nu_n)'$ */
-double const& a_theta, /* Shape hyper-parameter of the Gamma($a_{\theta}$,$b_{\theta}$) prior assigned to $\theta$ */
-double const& b_theta, /* Rate hyper-parameter of the Gamma($a_{\theta}$,$b_{\theta}$) prior assigned to $\theta$ */
-int const& n,
-int const& nBatch)
+    arma::vec const& prop_var, /* Current value of the proposal variances for $\theta$ */
+    arma::mat const& BatchDesign,
+    arma::vec const& BatchSizes,
+    arma::vec const& s, /* Current value of $s=(s_1,...,s_n)$' */
+    arma::vec const& nu, /* Current value of $\nu=(\nu_1,...,\nu_n)'$ */
+    double const& a_theta, /* Shape hyper-parameter of the Gamma($a_{\theta}$,$b_{\theta}$) prior assigned to $\theta$ */
+    double const& b_theta, /* Rate hyper-parameter of the Gamma($a_{\theta}$,$b_{\theta}$) prior assigned to $\theta$ */
+    int const& n,
+    int const& nBatch)
 {
   using arma::span;
   
@@ -299,6 +357,50 @@ int const& nBatch)
   log_aux -= BatchSizes % (lgamma_cpp(exp(-y))-lgamma_cpp(1/theta0));
   log_aux += ((exp(-y+logtheta)-1)/theta0) % sum(BatchDesignAux,0).t();
   log_aux -= b_theta * theta0 % (exp(y-logtheta)-1);
+  arma::umat ind = log(u) < log_aux;
+  // DEBUG: Reject proposed values below 0.0001 (to avoid numerical innacuracies)
+  ind %= 0.0001 < exp(y);
+  
+  // CREATING OUTPUT VARIABLE
+  arma::vec theta = ind % exp(y) + (1 - ind) % theta0;
+  
+  // OUTPUT
+  return join_rows(theta, arma::conv_to<arma::mat>::from(ind));
+}
+
+/* Metropolis-Hastings updates of theta 
+ */
+arma::mat thetaUpdateBatch2(
+    arma::vec const& theta0, /* Current value of $\theta$ */
+    arma::vec const& prop_var, /* Current value of the proposal variances for $\theta$ */
+    arma::mat const& BatchDesign,
+    arma::vec const& BatchSizes,
+    arma::vec const& nu, /* Current value of $\nu=(\nu_1,...,\nu_n)'$ */
+    double const& a_theta, /* Shape hyper-parameter of the Gamma($a_{\theta}$,$b_{\theta}$) prior assigned to $\theta$ */
+    double const& b_theta, /* Rate hyper-parameter of the Gamma($a_{\theta}$,$b_{\theta}$) prior assigned to $\theta$ */
+    double const& as,
+    double const& ab,
+    int const& n,
+    int const& nBatch)
+{
+  using arma::span;
+  
+  // CREATING VARIABLES WHERE TO STORE DRAWS
+  arma::vec logtheta = log(theta0);
+  
+  // PROPOSAL STEP
+  arma::vec y = arma::randn(nBatch) % sqrt(prop_var) + logtheta;
+  arma::vec u = arma::randu(nBatch);
+  
+  // ACCEPT/REJECT STEP
+  arma::vec log_aux = BatchSizes % (lgamma_cpp(as + exp(-y))-lgamma_cpp(as + 1/theta0));
+  log_aux -= BatchSizes % (lgamma_cpp(exp(-y))-lgamma_cpp(1/theta0));
+  log_aux += (a_theta - as * BatchSizes) % (y-logtheta); 
+  log_aux -= b_theta * (exp(y) - theta0);
+  log_aux += (exp(-y) - 1/theta0) % (BatchDesign.t() * log(nu));
+  log_aux -= (as + exp(-y)) % (BatchDesign.t() * log(BatchDesign * exp(y) + nu));
+  log_aux -= (as + 1/theta0) % (BatchDesign.t() * log(BatchDesign * theta0 + nu));
+  
   arma::umat ind = log(u) < log_aux;
   // DEBUG: Reject proposed values below 0.0001 (to avoid numerical innacuracies)
   ind %= 0.0001 < exp(y);

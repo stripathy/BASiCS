@@ -101,7 +101,6 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
   arma::mat mu = zeros(q0, Naux); 
   arma::mat delta = zeros(q0, Naux); 
   arma::mat phi = ones(n, Naux);
-  arma::mat s = zeros(n, Naux);  
   arma::mat nu = zeros(n, Naux); 
   arma::mat theta = zeros(nBatch, Naux); 
   arma::mat LSmu;
@@ -130,7 +129,6 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
   arma::mat muAux = zeros(q0,2); muAux.col(0) = as_arma(mu0); 
   arma::mat deltaAux = zeros(q0,2); deltaAux.col(0) = as_arma(delta0); 
   arma::vec phiAux = as_arma(phi0); Rcpp::List phiAuxList;
-  arma::vec sAux = as_arma(s0); 
   arma::mat nuAux = zeros(n,2); nuAux.col(0) = as_arma(nu0);
   arma::mat thetaAux = zeros(nBatch, 2); thetaAux.col(0) = as_arma(theta0);
   arma::vec thetaBatch = BatchDesign_arma * as_arma(theta0); 
@@ -182,9 +180,9 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
     // UPDATE OF THETA: 
     // 1st ELEMENT IS THE UPDATE, 
     // 2nd ELEMENT IS THE ACCEPTANCE INDICATOR
-    thetaAux = thetaUpdateBatch(thetaAux.col(0), exp(LSthetaAux), 
-                                BatchDesign_arma, BatchSizes,
-                                sAux, nuAux.col(0), atheta, btheta, n, nBatch);
+    thetaAux = thetaUpdateBatch2(thetaAux.col(0), exp(LSthetaAux), 
+                                 BatchDesign_arma, BatchSizes,
+                                 nuAux.col(0), atheta, btheta, as, bs, n, nBatch);
     PthetaAux += thetaAux.col(1); if(i>=Burn) {thetaAccept += thetaAux.col(1);}
     thetaBatch = BatchDesign_arma * thetaAux.col(0); 
     
@@ -196,10 +194,6 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
                      sumByCellBio_arma, s2mu, q0, n,
                      y_q0, u_q0, ind_q0);     
     PmuAux += muAux.col(1); if(i>=Burn) muAccept += muAux.col(1);
-    
-    // UPDATE OF S
-    sAux = sUpdateBatch(sAux, nuAux.col(0), thetaBatch,
-                        as, bs, n, y_n); 
     
     // UPDATE OF DELTA: 
     // 1st COLUMN IS THE UPDATE, 
@@ -213,11 +207,11 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
     // UPDATE OF NU: 
     // 1st COLUMN IS THE UPDATE, 
     // 2nd COLUMN IS THE ACCEPTANCE INDICATOR
-    nuAux = nuUpdateBatch(nuAux.col(0), exp(LSnuAux), Counts_arma, SumSpikeInput,
-                          BatchDesign_arma,
-                          muAux.col(0), 1/deltaAux.col(0),
-                          phiAux, sAux, thetaBatch, sumByGeneAll_arma, q0, n,
-                          y_n, u_n, ind_n); 
+    nuAux = nuUpdateBatch2(nuAux.col(0), exp(LSnuAux), Counts_arma, SumSpikeInput,
+                           BatchDesign_arma,
+                           muAux.col(0), 1/deltaAux.col(0),
+                           phiAux, thetaBatch, sumByGeneAll_arma, as, bs, q0, n,
+                           y_n, u_n, ind_n); 
     PnuAux += nuAux.col(1); if(i>=Burn) nuAccept += nuAux.col(1);
     
     // STOP ADAPTING THE PROPOSAL VARIANCES AFTER EndAdapt ITERATIONS
@@ -251,7 +245,6 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
       mu.col(i/Thin - Burn/Thin) = muAux.col(0); 
       delta.col(i/Thin - Burn/Thin) = deltaAux.col(0); 
       phi.col(i/Thin - Burn/Thin) = phiAux;
-      s.col(i/Thin - Burn/Thin) = sAux;
       nu.col(i/Thin - Burn/Thin) = nuAux.col(0);       
       theta.col(i/Thin - Burn/Thin) = thetaAux.col(0);       
       
@@ -270,7 +263,6 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
       Rcout << "mu (gene 1): " << muAux(0,0) << std::endl; 
       Rcout << "delta (gene 1): " << deltaAux(0,0) << std::endl; 
       Rcout << "phi (cell 1): " << phiAux(0) << std::endl;
-      Rcout << "s (cell 1): " << sAux(0) << std::endl;
       Rcout << "nu (cell 1): " << nuAux(0,0) << std::endl;
       Rcout << "theta (batch 1): " << thetaAux(0,0) << std::endl;
       Rcout << "-----------------------------------------------------" << std::endl;
@@ -303,7 +295,6 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
         Rcpp::Named("mu") = mu.t(),
         Rcpp::Named("delta") = delta.t(),
         Rcpp::Named("phi") = phi.t(),
-        Rcpp::Named("s") = s.t(),
         Rcpp::Named("nu") = nu.t(),
         Rcpp::Named("theta") = theta.t(),
         Rcpp::Named("ls.mu") = LSmu.t(),
@@ -319,7 +310,6 @@ Rcpp::List HiddenBASiCS_MCMCcpp(
         Rcpp::Named("mu") = mu.t(),
         Rcpp::Named("delta") = delta.t(),
         Rcpp::Named("phi") = phi.t(),
-        Rcpp::Named("s") = s.t(),
         Rcpp::Named("nu") = nu.t(),
         Rcpp::Named("theta") = theta.t())); 
   }
