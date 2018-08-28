@@ -202,7 +202,7 @@ setClass("BASiCS_Summary",
            
            ValidNames <- c("mu", "delta", "phi", "s", "nu", "theta",
                            "beta", "sigma2", "epsilon")
-           ReqNames <- c("mu", "delta", "s", "nu", "theta")
+           ReqNames <- c("mu", "delta", "nu", "theta")
            
            # Check whether all elements of `parameters` are valid
            if(sum(!(names(object@parameters) %in% ValidNames) > 0) > 0)
