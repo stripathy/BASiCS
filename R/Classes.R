@@ -209,7 +209,7 @@ setClass("BASiCS_Summary",
              errors <- c(errors, "Invalid elemens in `parameters` slot")
            
            # Check whether all minimum `parameters` are present
-           if(sum(names(object@parameters) %in% ReqNames) != 5)
+           if(sum(names(object@parameters) %in% ReqNames) != 4)
              errors <- c(errors, "One or more parameters are missing")     
            
            if (length(errors) == 0) 
