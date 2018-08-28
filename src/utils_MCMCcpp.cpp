@@ -379,7 +379,7 @@ arma::mat thetaUpdateBatch2(
     double const& a_theta, /* Shape hyper-parameter of the Gamma($a_{\theta}$,$b_{\theta}$) prior assigned to $\theta$ */
     double const& b_theta, /* Rate hyper-parameter of the Gamma($a_{\theta}$,$b_{\theta}$) prior assigned to $\theta$ */
     double const& as,
-    double const& ab,
+    double const& bs,
     int const& n,
     int const& nBatch)
 {
@@ -395,11 +395,12 @@ arma::mat thetaUpdateBatch2(
   // ACCEPT/REJECT STEP
   arma::vec log_aux = BatchSizes % (lgamma_cpp(as + exp(-y))-lgamma_cpp(as + 1/theta0));
   log_aux -= BatchSizes % (lgamma_cpp(exp(-y))-lgamma_cpp(1/theta0));
-  log_aux += (a_theta - as * BatchSizes) % (y-logtheta); 
+  // fix the maths here! (script ok; maths no)
+  log_aux += (a_theta + as * BatchSizes) % (y-logtheta); 
   log_aux -= b_theta * (exp(y) - theta0);
   log_aux += (exp(-y) - 1/theta0) % (BatchDesign.t() * log(nu));
-  log_aux -= (as + exp(-y)) % (BatchDesign.t() * log(BatchDesign * exp(y) + nu));
-  log_aux -= (as + 1/theta0) % (BatchDesign.t() * log(BatchDesign * theta0 + nu));
+  log_aux -= (as + exp(-y)) % (BatchDesign.t() * log(bs * BatchDesign * exp(y) + nu));
+  log_aux += (as + 1/theta0) % (BatchDesign.t() * log(bs * BatchDesign * theta0 + nu));
   
   arma::umat ind = log(u) < log_aux;
   // DEBUG: Reject proposed values below 0.0001 (to avoid numerical innacuracies)
