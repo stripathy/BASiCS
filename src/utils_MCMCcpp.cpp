@@ -116,6 +116,52 @@ arma::mat deltaUpdate(
 /* Metropolis-Hastings updates of phi 
 * Joint updates using Dirichlet proposals
 */
+arma::mat phiUpdate2(
+    arma::vec const& phi0, 
+    arma::vec const& prop_var, 
+    arma::mat const& Counts, 
+    arma::vec const& mu, 
+    arma::vec const& invdelta, 
+    arma::vec const& nu, 
+    double const& aphi, 
+    double const& bphi, 
+    arma::vec const& sum_bygene_bio, 
+    int const& q0,
+    int const& n,
+    arma::vec & phi1,
+    arma::vec & u,
+    arma::vec & ind)
+{
+  // PROPOSAL STEP
+  phi1 = exp(arma::randn(n) % sqrt(prop_var) + log(phi0));
+  u = arma::randu(n);
+  
+  // There is a -1 that cancels out as proposal is in log-scale
+  arma::vec log_aux = (sum_bygene_bio + aphi) % (log(phi1) - log(phi0));
+  log_aux -= bphi * (phi1 - phi0);
+  for (int j=0; j < n; j++) {
+    for (int i=0; i < q0; i++) {
+      log_aux(j) -= ( Counts(i,j) + invdelta(i) ) *  
+        log( ( phi1(j)*nu(j)*mu(i) + invdelta(i) ) / 
+        ( phi0(j)*nu(j)*mu(i) + invdelta(i) ));
+    } 
+  }
+    
+    /* CREATING OUTPUT VARIABLE & DEBUG 
+     * Proposed values are automatically rejected in the following cases:
+     * - If smaller than 1e-5
+     * - If the proposed value is not finite
+     * - When the acceptance rate cannot be numerally computed
+     */ 
+  ind = DegubInd(ind, n, u, log_aux, phi1, 1e-5, "phi");
+  for (int j=0; j < n; j++) {
+    if(ind(j) == 0) phi1(j) = phi0(j);  
+  }
+  
+  // OUTPUT
+  return join_rows(n * phi1 / sum(phi1), ind); 
+}
+
 Rcpp::List phiUpdate(
     arma::vec const& phi0, 
     double const& prop_var, 

@@ -88,6 +88,22 @@ Rcpp::List phiUpdate(
     int const& n,
     arma::vec & phi1);
 
+arma::mat phiUpdate2(
+    arma::vec const& phi0, 
+    arma::vec const& prop_var, 
+    arma::mat const& Counts, 
+    arma::vec const& mu, 
+    arma::vec const& invdelta, 
+    arma::vec const& nu, 
+    double const& aphi, 
+    double const& bphi, 
+    arma::vec const& sum_bygene_bio, 
+    int const& q0,
+    int const& n,
+    arma::vec & phi1,
+    arma::vec & u,
+    arma::vec & ind);
+
 arma::vec sUpdateBatch(
     arma::vec const& s0, 
     arma::vec const& nu, 

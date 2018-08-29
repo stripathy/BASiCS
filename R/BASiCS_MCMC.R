@@ -311,10 +311,12 @@ BASiCS_MCMC <- function(Data, N, Thin, Burn, Regression, ...)
                 BatchDesign, 
                 SpikeInput, mu0, delta0, phi0, s0, nu0, rep(theta0, nBatch), 
                 PriorParam$s2.mu, PriorParam$a.delta, PriorParam$b.delta, 
-                PriorParam$s2.delta, PriorDeltaNum, PriorParam$p.phi, 
+                PriorParam$s2.delta, PriorDeltaNum, 
+                PriorParam$a.theta, PriorParam$b.theta, #PriorParam$p.phi, # Replace by aphi, bphi 
                 PriorParam$a.s, PriorParam$b.s, 
                 PriorParam$a.theta, PriorParam$b.theta, 
-                AR, ls.mu0, ls.delta0, ls.phi0, ls.nu0, rep(ls.theta0, nBatch), 
+                AR, ls.mu0, ls.delta0, ls.nu0, #ls.phi0, # replace by ls.phi0 
+                ls.nu0, rep(ls.theta0, nBatch), 
                 sum.bycell.all, sum.bycell.bio, sum.bygene.all, sum.bygene.bio, 
                 as.numeric(StoreAdapt), StopAdapt, as.numeric(PrintProgress)))       
     }
